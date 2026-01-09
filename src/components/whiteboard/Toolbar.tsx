@@ -56,8 +56,8 @@ export default function Toolbar({
           >
             <Icon className="w-5 h-5" />
 
-            {/* Tooltip */}
-            <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+            {/* Fixed Tooltip */}
+            <span className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50">
               {tool.label}
             </span>
           </button>

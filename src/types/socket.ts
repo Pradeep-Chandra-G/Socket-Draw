@@ -13,6 +13,14 @@ export interface ServerToClientEvents {
     userCount: number;
   }) => void;
   "user:left": (data: { userId: string; userCount: number }) => void;
+  "cursor:move": (data: {
+    userId: string;
+    userName: string;
+    x: number;
+    y: number;
+    color: string;
+  }) => void;
+  "cursor:remove": (data: { userId: string }) => void;
   "room:full": () => void;
   error: (message: string) => void;
 }
@@ -33,11 +41,18 @@ export interface ClientToServerEvents {
     element: WhiteboardElement;
   }) => void;
   "element:delete": (data: { roomCode: string; elementId: string }) => void;
+  "cursor:move": (data: {
+    roomCode: string;
+    userId: string;
+    userName: string;
+    x: number;
+    y: number;
+    color?: string;
+  }) => void;
   "elements:request": (roomCode: string) => void;
 }
 
 export interface RoomData {
-  users: Map<string, { userId: string; userName: string }>;
+  users: Map<string, { userId: string; userName: string; color: string }>;
   elements: WhiteboardElement[];
 }
-

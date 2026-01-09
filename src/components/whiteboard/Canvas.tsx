@@ -9,7 +9,7 @@ import {
   forwardRef,
   useImperativeHandle,
 } from "react";
-import type { WhiteboardElement, Point } from "@/types/whiteboard";
+import type { WhiteboardElement } from "@/types/whiteboard";
 
 interface CanvasProps {
   elements: WhiteboardElement[];
@@ -17,8 +17,9 @@ interface CanvasProps {
   selectedTool: string;
   onStartDrawing: (x: number, y: number) => void;
   onUpdateDrawing: (x: number, y: number) => void;
-  onFinishDrawing: () => void;
+  onFinishDrawing: (element?: WhiteboardElement) => void;
   onAddText: (text: string, x: number, y: number) => void;
+  onCursorMove?: (x: number, y: number) => void;
 }
 
 const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
@@ -31,6 +32,7 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
       onUpdateDrawing,
       onFinishDrawing,
       onAddText,
+      onCursorMove,
     },
     ref
   ) => {
@@ -64,7 +66,6 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
         redraw();
       };
 
-      // Handle touch events with passive: false to allow preventDefault
       const preventTouch = (e: TouchEvent) => {
         e.preventDefault();
       };
@@ -214,10 +215,11 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const { x, y } = getMousePos(e);
       onUpdateDrawing(x, y);
+      onCursorMove?.(x, y);
     };
 
     const handleMouseUp = () => {
-      onFinishDrawing();
+      onFinishDrawing(currentElement || undefined);
     };
 
     const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
@@ -234,10 +236,11 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
     const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
       const { x, y } = getTouchPos(e);
       onUpdateDrawing(x, y);
+      onCursorMove?.(x, y);
     };
 
     const handleTouchEnd = () => {
-      onFinishDrawing();
+      onFinishDrawing(currentElement || undefined);
     };
 
     const handleTextSubmit = () => {
@@ -259,8 +262,11 @@ const Canvas = forwardRef<HTMLCanvasElement, CanvasProps>(
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
-          className="w-full h-full cursor-crosshair bg-white"
-          style={{ touchAction: "none" }}
+          className="w-full h-full bg-white"
+          style={{
+            touchAction: "none",
+            cursor: selectedTool === "text" ? "text" : "crosshair",
+          }}
         />
 
         {textInput.show && (

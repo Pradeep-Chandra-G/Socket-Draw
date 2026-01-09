@@ -12,22 +12,38 @@ import ColorPicker from "@/components/whiteboard/ColorPicker";
 import FontSelector from "@/components/whiteboard/FontSelector";
 import ShareModal from "@/components/whiteboard/ShareModal";
 import ExportMenu from "@/components/whiteboard/ExportMenu";
+import JoinRoomModal from "@/components/whiteboard/JoinRoomModal";
 import Button from "@/components/ui/Button";
 import { useWhiteboard } from "@/hooks/useWhiteboard";
 import { useSocket } from "@/hooks/useSocket";
-import type { Whiteboard } from "@/types/whiteboard";
+import type { Whiteboard, WhiteboardElement } from "@/types/whiteboard";
+
+interface RemoteCursor {
+  x: number;
+  y: number;
+  userId: string;
+  userName: string;
+  color: string;
+}
+
+const CURSOR_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#000000"];
 
 export default function WhiteboardEditor() {
   const params = useParams();
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [whiteboard, setWhiteboard] = useState<Whiteboard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   const [userCount, setUserCount] = useState(1);
   const [isSaving, setIsSaving] = useState(false);
+  const [remoteCursors, setRemoteCursors] = useState<Map<string, RemoteCursor>>(
+    new Map()
+  );
+  const lastSaveRef = useRef<string>("");
 
   const {
     elements,
@@ -51,16 +67,21 @@ export default function WhiteboardEditor() {
   const { socket, isConnected } = useSocket();
 
   useEffect(() => {
-    if (!session) {
+    if (status === "unauthenticated") {
       router.push("/auth/login");
       return;
     }
 
-    fetchWhiteboard();
-  }, [params.id, session]);
+    if (status === "authenticated") {
+      fetchWhiteboard();
+    }
+  }, [params.id, status]);
 
   useEffect(() => {
     if (!socket || !isConnected || !whiteboard || !session) return;
+
+    const userIndex = Math.floor(Math.random() * CURSOR_COLORS.length);
+    const userColor = CURSOR_COLORS[userIndex];
 
     socket.emit("room:join", {
       roomCode: whiteboard.roomCode,
@@ -68,30 +89,51 @@ export default function WhiteboardEditor() {
       userName: session.user.name || session.user.email,
     });
 
-    socket.on("elements:sync", (syncedElements) => {
+    socket.on("elements:sync", (syncedElements: WhiteboardElement[]) => {
       setElements(syncedElements);
     });
 
-    socket.on("element:created", (element) => {
+    socket.on("element:created", (element: WhiteboardElement) => {
       setElements((prev) => [...prev, element]);
     });
 
-    socket.on("element:updated", (element) => {
+    socket.on("element:updated", (element: WhiteboardElement) => {
       setElements((prev) =>
         prev.map((el) => (el.id === element.id ? element : el))
       );
     });
 
-    socket.on("element:deleted", (elementId) => {
+    socket.on("element:deleted", (elementId: string) => {
       setElements((prev) => prev.filter((el) => el.id !== elementId));
     });
 
-    socket.on("user:joined", ({ userCount }) => {
+    socket.on("user:joined", ({ userCount }: { userCount: number }) => {
       setUserCount(userCount);
     });
 
-    socket.on("user:left", ({ userCount }) => {
+    socket.on("user:left", ({ userCount }: { userCount: number }) => {
       setUserCount(userCount);
+    });
+
+    socket.on(
+      "cursor:move",
+      ({ userId, userName, x, y, color }: RemoteCursor) => {
+        if (userId !== session.user.id) {
+          setRemoteCursors((prev) => {
+            const updated = new Map(prev);
+            updated.set(userId, { userId, userName, x, y, color });
+            return updated;
+          });
+        }
+      }
+    );
+
+    socket.on("cursor:remove", ({ userId }: { userId: string }) => {
+      setRemoteCursors((prev) => {
+        const updated = new Map(prev);
+        updated.delete(userId);
+        return updated;
+      });
     });
 
     socket.on("room:full", () => {
@@ -110,13 +152,15 @@ export default function WhiteboardEditor() {
       socket.off("user:joined");
       socket.off("user:left");
       socket.off("room:full");
+      socket.off("cursor:move");
+      socket.off("cursor:remove");
     };
   }, [socket, isConnected, whiteboard, session]);
 
   useEffect(() => {
     const interval = setInterval(() => {
       handleSave(true);
-    }, 30000); // Auto-save every 30 seconds
+    }, 10000); // Auto-save every 10 seconds
 
     return () => clearInterval(interval);
   }, [elements]);
@@ -143,18 +187,31 @@ export default function WhiteboardEditor() {
   const handleSave = async (silent = false) => {
     if (!whiteboard) return;
 
+    const currentState = JSON.stringify(elements);
+    if (currentState === lastSaveRef.current) return;
+
     if (!silent) setIsSaving(true);
 
     try {
-      await fetch(`/api/whiteboards/${whiteboard.id}`, {
+      const response = await fetch(`/api/whiteboards/${whiteboard.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ elements }),
       });
+
+      if (response.ok) {
+        lastSaveRef.current = currentState;
+        if (!silent) {
+          // Show success feedback
+          setTimeout(() => setIsSaving(false), 500);
+        }
+      }
     } catch (error) {
       console.error("Failed to save:", error);
     } finally {
-      if (!silent) setIsSaving(false);
+      if (!silent) {
+        setTimeout(() => setIsSaving(false), 1000);
+      }
     }
   };
 
@@ -169,6 +226,29 @@ export default function WhiteboardEditor() {
           });
         });
       }
+    }
+  };
+
+  const handleElementCreate = (element: WhiteboardElement) => {
+    if (socket && whiteboard) {
+      socket.emit("element:create", {
+        roomCode: whiteboard.roomCode,
+        element,
+      });
+    }
+  };
+
+  const handleCursorMove = (x: number, y: number) => {
+    if (socket && whiteboard && session) {
+      const userIndex = Math.floor(Math.random() * CURSOR_COLORS.length);
+      socket.emit("cursor:move", {
+        roomCode: whiteboard.roomCode,
+        userId: session.user.id,
+        userName: session.user.name || session.user.email,
+        x,
+        y,
+        color: CURSOR_COLORS[userIndex],
+      });
     }
   };
 
@@ -209,7 +289,6 @@ export default function WhiteboardEditor() {
             {whiteboard.name}
           </h1>
 
-          {/* User Count Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full">
             <Users className="w-4 h-4 text-slate-600" />
             <span className="text-sm font-semibold text-slate-700">
@@ -219,14 +298,24 @@ export default function WhiteboardEditor() {
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
-              onClick={handleSave}
+              onClick={() => handleSave(false)}
               disabled={isSaving}
               variant="secondary"
               size="sm"
               className="flex items-center gap-2 flex-1 sm:flex-none"
             >
               <Save className="w-4 h-4" />
-              <span>{isSaving ? "Saving..." : "Save"}</span>
+              <span>{isSaving ? "Saved!" : "Save"}</span>
+            </Button>
+
+            <Button
+              onClick={() => setShowJoinModal(true)}
+              variant="secondary"
+              size="sm"
+              className="flex items-center gap-2 flex-1 sm:flex-none"
+            >
+              <Users className="w-4 h-4" />
+              <span className="hidden sm:inline">Join</span>
             </Button>
 
             <Button
@@ -243,8 +332,8 @@ export default function WhiteboardEditor() {
       </header>
 
       {/* Toolbar Area */}
-      <div className="bg-white border-b-2 border-slate-200 px-4 py-3 overflow-x-auto shadow-sm">
-        <div className="flex flex-wrap items-center gap-3 min-w-max">
+      <div className="bg-white border-b-2 border-slate-200 px-4 py-3 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3">
           <Toolbar selectedTool={selectedTool} onToolSelect={setSelectedTool} />
           <ColorPicker
             selectedColor={selectedColor}
@@ -278,7 +367,7 @@ export default function WhiteboardEditor() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-hidden bg-white">
+      <div className="flex-1 overflow-hidden bg-white relative">
         <Canvas
           ref={canvasRef}
           elements={elements}
@@ -286,18 +375,63 @@ export default function WhiteboardEditor() {
           selectedTool={selectedTool}
           onStartDrawing={startDrawing}
           onUpdateDrawing={updateDrawing}
-          onFinishDrawing={finishDrawing}
-          onAddText={addText}
+          onFinishDrawing={(element) => {
+            finishDrawing();
+            if (element) handleElementCreate(element);
+          }}
+          onAddText={(text, x, y) => {
+            addText(text, x, y);
+          }}
+          onCursorMove={handleCursorMove}
         />
+
+        {/* Remote Cursors */}
+        {Array.from(remoteCursors.values()).map((cursor) => (
+          <div
+            key={cursor.userId}
+            className="absolute pointer-events-none z-50"
+            style={{
+              left: cursor.x,
+              top: cursor.y,
+              transform: "translate(-2px, -2px)",
+            }}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M5.5 3.5L19.5 12L12 13.5L9.5 20.5L5.5 3.5Z"
+                fill={cursor.color}
+                stroke="white"
+                strokeWidth="1.5"
+              />
+            </svg>
+            <div
+              className="mt-1 px-2 py-1 rounded text-xs font-semibold text-white whitespace-nowrap shadow-lg"
+              style={{ backgroundColor: cursor.color }}
+            >
+              {cursor.userName}
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* Share Modal */}
+      {/* Modals */}
       <ShareModal
         isOpen={showShareModal}
         onClose={() => setShowShareModal(false)}
         roomCode={whiteboard.roomCode}
         userCount={userCount}
         maxUsers={5}
+      />
+
+      <JoinRoomModal
+        isOpen={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
       />
     </div>
   );
