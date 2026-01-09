@@ -4,7 +4,6 @@ import { X } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import Button from "./Button";
-import { cn } from "@/lib/utils";
 
 interface ModalProps {
   isOpen: boolean;
@@ -39,19 +38,24 @@ export default function Modal({
 
   if (!isOpen) return null;
 
-  return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+  const modalContent = (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop with Blur */}
       <div
         ref={overlayRef}
         onClick={(e) => e.target === overlayRef.current && onClose()}
-        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
         aria-hidden="true"
       />
 
       {/* Modal Content */}
-      <div className="relative w-full max-w-lg transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between mb-5">
+      <div
+        className="relative w-full max-w-lg transform rounded-2xl bg-white p-6 sm:p-8 text-left shadow-2xl transition-all border-2 border-slate-200 max-h-[90vh] overflow-y-auto"
+        style={{
+          animation: "modalSlideIn 0.2s ease-out",
+        }}
+      >
+        <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-bold text-slate-900 tracking-tight">
             {title}
           </h3>
@@ -59,15 +63,29 @@ export default function Modal({
             variant="ghost"
             size="sm"
             onClick={onClose}
-            className="h-8 w-8 p-0 rounded-full hover:bg-slate-100"
+            className="h-9 w-9 p-0 rounded-full hover:bg-slate-100"
           >
-            <X className="h-4 w-4 text-slate-500" />
+            <X className="h-5 w-5 text-slate-500" />
             <span className="sr-only">Close</span>
           </Button>
         </div>
-        <div className="mt-2">{children}</div>
+        <div>{children}</div>
       </div>
-    </div>,
-    document.body
+
+      <style jsx>{`
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: scale(0.95) translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+      `}</style>
+    </div>
   );
+
+  return createPortal(modalContent, document.body);
 }

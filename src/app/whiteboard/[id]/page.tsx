@@ -5,7 +5,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Share2, Save, Trash2 } from "lucide-react";
+import { ArrowLeft, Share2, Save, Trash2, Users } from "lucide-react";
 import Canvas from "@/components/whiteboard/Canvas";
 import Toolbar from "@/components/whiteboard/Toolbar";
 import ColorPicker from "@/components/whiteboard/ColorPicker";
@@ -174,10 +174,15 @@ export default function WhiteboardEditor() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading whiteboard...</p>
+          <div className="relative w-16 h-16 mx-auto mb-6">
+            <div className="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+            <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+          </div>
+          <p className="text-slate-600 font-medium text-lg">
+            Loading whiteboard...
+          </p>
         </div>
       </div>
     );
@@ -186,9 +191,9 @@ export default function WhiteboardEditor() {
   if (!whiteboard) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-slate-50">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-4 py-3 sm:px-6 sm:py-4">
+      <header className="bg-white border-b-2 border-slate-200 px-4 py-3 sm:px-6 shadow-sm">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           <Button
             variant="ghost"
@@ -200,9 +205,17 @@ export default function WhiteboardEditor() {
             <span className="hidden sm:inline">Back</span>
           </Button>
 
-          <h1 className="text-lg sm:text-xl font-bold text-gray-900 flex-1">
+          <h1 className="text-lg sm:text-xl font-bold text-slate-900 flex-1">
             {whiteboard.name}
           </h1>
+
+          {/* User Count Badge */}
+          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full">
+            <Users className="w-4 h-4 text-slate-600" />
+            <span className="text-sm font-semibold text-slate-700">
+              {userCount}
+            </span>
+          </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <Button
@@ -220,7 +233,7 @@ export default function WhiteboardEditor() {
               onClick={() => setShowShareModal(true)}
               variant="primary"
               size="sm"
-              className="flex items-center gap-2 flex-1 sm:flex-none"
+              className="flex items-center gap-2 flex-1 sm:flex-none shadow-lg shadow-blue-600/30"
             >
               <Share2 className="w-4 h-4" />
               <span className="hidden sm:inline">Share</span>
@@ -230,8 +243,8 @@ export default function WhiteboardEditor() {
       </header>
 
       {/* Toolbar Area */}
-      <div className="bg-white border-b border-gray-200 px-4 py-3 overflow-x-auto">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3 lg:gap-4 min-w-max">
+      <div className="bg-white border-b-2 border-slate-200 px-4 py-3 overflow-x-auto shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 min-w-max">
           <Toolbar selectedTool={selectedTool} onToolSelect={setSelectedTool} />
           <ColorPicker
             selectedColor={selectedColor}
@@ -265,8 +278,9 @@ export default function WhiteboardEditor() {
       </div>
 
       {/* Canvas */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden bg-white">
         <Canvas
+          ref={canvasRef}
           elements={elements}
           currentElement={currentElement}
           selectedTool={selectedTool}
@@ -286,5 +300,5 @@ export default function WhiteboardEditor() {
         maxUsers={5}
       />
     </div>
-  );    
+  );
 }

@@ -29,9 +29,9 @@ export default function Toolbar({
   return (
     <div
       className={cn(
-        "bg-white border border-gray-200 shadow-xl rounded-full sm:rounded-2xl p-2",
-        "flex flex-row sm:flex-col gap-2 sm:gap-3",
-        "items-center justify-center backdrop-blur-sm bg-white/90",
+        "bg-white border-2 border-slate-200 shadow-lg rounded-2xl p-2",
+        "flex flex-row gap-2",
+        "items-center justify-center",
         className
       )}
     >
@@ -44,17 +44,22 @@ export default function Toolbar({
             onClick={() => onToolSelect(tool.type)}
             className={cn(
               "flex items-center justify-center transition-all duration-200",
-              "w-10 h-10 sm:w-11 sm:h-11 rounded-full sm:rounded-xl",
+              "w-11 h-11 rounded-xl relative group",
               "hover:scale-105 active:scale-95 touch-manipulation",
               isSelected
-                ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-200"
-                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                ? "bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-md shadow-blue-600/30"
+                : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
             )}
             title={tool.label}
             aria-label={tool.label}
             type="button"
           >
-            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <Icon className="w-5 h-5" />
+
+            {/* Tooltip */}
+            <span className="absolute -bottom-10 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+              {tool.label}
+            </span>
           </button>
         );
       })}

@@ -66,21 +66,26 @@ export default function WhiteboardGrid() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh]">
-        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-        <p className="text-gray-500 font-medium">Loading your spaces...</p>
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+          <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+        </div>
+        <p className="text-slate-600 font-medium mt-6 text-lg">
+          Loading your spaces...
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-4">
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
+          <h2 className="text-3xl font-bold text-slate-900 tracking-tight">
             My Whiteboards
           </h2>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 mt-2">
             {whiteboards.length}{" "}
             {whiteboards.length === 1 ? "project" : "projects"} created
           </p>
@@ -88,35 +93,46 @@ export default function WhiteboardGrid() {
         <Button
           onClick={handleCreate}
           disabled={isCreating}
-          className="w-full xs:w-auto shadow-sm"
+          className="w-full sm:w-auto shadow-lg shadow-blue-600/30"
         >
           {isCreating ? (
-            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Creating...
+            </>
           ) : (
-            <Plus className="w-4 h-4 mr-2" />
+            <>
+              <Plus className="w-4 h-4 mr-2" />
+              New Whiteboard
+            </>
           )}
-          <span>{isCreating ? "Creating..." : "New Whiteboard"}</span>
         </Button>
       </div>
 
       {whiteboards.length === 0 ? (
-        <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl">
-          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
-            <Plus className="w-8 h-8 text-blue-600" />
+        <div className="text-center py-20 bg-gradient-to-br from-slate-50 to-blue-50 border-2 border-dashed border-slate-300 rounded-2xl">
+          <div className="w-20 h-20 bg-white rounded-2xl shadow-lg flex items-center justify-center mx-auto mb-6">
+            <Plus className="w-10 h-10 text-blue-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-xl font-bold text-slate-900 mb-3">
             No whiteboards yet
           </h3>
-          <p className="text-gray-500 mb-6 max-w-xs mx-auto">
+          <p className="text-slate-600 mb-8 max-w-md mx-auto leading-relaxed">
             Create your first whiteboard to start collaborating with your team
             in real-time.
           </p>
-          <Button onClick={handleCreate} disabled={isCreating}>
-            Create Whiteboard
+          <Button
+            onClick={handleCreate}
+            disabled={isCreating}
+            size="lg"
+            className="shadow-xl shadow-blue-600/30"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Create Your First Whiteboard
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {whiteboards.map((whiteboard) => (
             <WhiteboardCard
               key={whiteboard.id}

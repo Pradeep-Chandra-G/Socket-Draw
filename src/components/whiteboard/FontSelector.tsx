@@ -19,11 +19,16 @@ export default function FontSelector({
   onFontSizeChange,
 }: FontSelectorProps) {
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 bg-white border-2 border-slate-200 rounded-2xl p-2 shadow-lg">
+      <span className="text-xs font-semibold text-slate-600 px-2 hidden sm:inline">
+        Font
+      </span>
+
+      {/* Font Family Selector */}
       <select
         value={fontFamily}
         onChange={(e) => onFontFamilyChange(e.target.value)}
-        className="px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        className="px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white text-slate-700 font-medium cursor-pointer transition-all hover:border-slate-300"
         aria-label="Select font family"
       >
         {fonts.map((font) => (
@@ -33,10 +38,11 @@ export default function FontSelector({
         ))}
       </select>
 
+      {/* Font Size Selector */}
       <select
         value={fontSize}
         onChange={(e) => onFontSizeChange(Number(e.target.value))}
-        className="px-2 py-1.5 sm:px-3 sm:py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+        className="px-3 py-2 text-sm border-2 border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent bg-white text-slate-700 font-medium cursor-pointer transition-all hover:border-slate-300"
         aria-label="Select font size"
       >
         {sizes.map((size) => (
