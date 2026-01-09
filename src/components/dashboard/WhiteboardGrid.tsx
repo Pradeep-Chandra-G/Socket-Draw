@@ -3,7 +3,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Loader2 } from "lucide-react";
 import WhiteboardCard from "./WhiteboardCard";
 import Button from "@/components/ui/Button";
 import type { Whiteboard } from "@/types/whiteboard";
@@ -66,54 +66,57 @@ export default function WhiteboardGrid() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading whiteboards...</p>
-        </div>
+      <div className="flex flex-col items-center justify-center min-h-[50vh]">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <p className="text-gray-500 font-medium">Loading your spaces...</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 tracking-tight">
             My Whiteboards
           </h2>
-          <p className="text-sm sm:text-base text-gray-600 mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             {whiteboards.length}{" "}
-            {whiteboards.length === 1 ? "whiteboard" : "whiteboards"}
+            {whiteboards.length === 1 ? "project" : "projects"} created
           </p>
         </div>
         <Button
           onClick={handleCreate}
           disabled={isCreating}
-          className="flex items-center gap-2 w-full sm:w-auto"
+          className="w-full xs:w-auto shadow-sm"
         >
-          <Plus className="w-5 h-5" />
+          {isCreating ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Plus className="w-4 h-4 mr-2" />
+          )}
           <span>{isCreating ? "Creating..." : "New Whiteboard"}</span>
         </Button>
       </div>
 
       {whiteboards.length === 0 ? (
-        <div className="text-center py-16 sm:py-24">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Plus className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400" />
+        <div className="text-center py-20 bg-gray-50 border-2 border-dashed border-gray-200 rounded-2xl">
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center mx-auto mb-4">
+            <Plus className="w-8 h-8 text-blue-600" />
           </div>
-          <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
             No whiteboards yet
           </h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-6">
-            Create your first whiteboard to start collaborating
+          <p className="text-gray-500 mb-6 max-w-xs mx-auto">
+            Create your first whiteboard to start collaborating with your team
+            in real-time.
           </p>
           <Button onClick={handleCreate} disabled={isCreating}>
             Create Whiteboard
           </Button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
           {whiteboards.map((whiteboard) => (
             <WhiteboardCard
               key={whiteboard.id}

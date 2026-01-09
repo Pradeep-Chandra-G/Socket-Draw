@@ -6,9 +6,17 @@
   box-sizing: border-box;
 }
 
+:root {
+  --foreground-rgb: 0, 0, 0;
+  --background-start-rgb: 214, 219, 220;
+  --background-end-rgb: 255, 255, 255;
+}
+
 html,
 body {
   height: 100%;
+  /* Fix for mobile browser address bar scroll behavior */
+  min-height: 100dvh; 
   overflow-x: hidden;
 }
 
@@ -17,5 +25,15 @@ body {
     Roboto, "Helvetica Neue", Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overscroll-behavior-y: contain;
+  /* Prevent bounce effect on mobile */
+  overscroll-behavior-y: none; 
+}
+
+/* Utilities for full height without scrollbars */
+.h-screen-safe {
+  height: 100dvh;
+}
+
+.min-h-screen-safe {
+  min-height: 100dvh;
 }

@@ -1,12 +1,11 @@
-// src/components/dashboard/WhiteboardCard.tsx
-
 "use client";
 
+import { MoreVertical, Trash2, ExternalLink, Calendar } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { Trash2, ExternalLink, Copy, MoreVertical } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDistanceToNow } from "date-fns";
 import type { Whiteboard } from "@/types/whiteboard";
+import Button from "@/components/ui/Button";
 
 interface WhiteboardCardProps {
   whiteboard: Whiteboard;
@@ -17,114 +16,80 @@ export default function WhiteboardCard({
   whiteboard,
   onDelete,
 }: WhiteboardCardProps) {
-  const router = useRouter();
   const [showMenu, setShowMenu] = useState(false);
-  const [copied, setCopied] = useState(false);
-
-  const elementCount = Array.isArray(whiteboard.elements)
-    ? whiteboard.elements.length
-    : 0;
-
-  const handleCopyCode = async () => {
-    try {
-      await navigator.clipboard.writeText(whiteboard.roomCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
-      console.error("Failed to copy:", error);
-    }
-  };
-
-  const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this whiteboard?")) {
-      onDelete(whiteboard.id);
-    }
-    setShowMenu(false);
-  };
 
   return (
-    <div className="group bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all overflow-hidden">
-      <div
-        onClick={() => router.push(`/whiteboard/${whiteboard.id}`)}
-        className="cursor-pointer p-4 sm:p-6"
-      >
-        <div className="flex items-start justify-between mb-3">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 line-clamp-1 flex-1">
+    <div className="group relative bg-white rounded-2xl border border-slate-200 shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+      <Link href={`/whiteboard/${whiteboard.id}`} className="block h-full">
+        <div className="aspect-video bg-slate-50 relative border-b border-slate-100 flex items-center justify-center overflow-hidden">
+          {/* Abstract placeholder pattern */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:16px_16px]"></div>
+          <div className="w-16 h-16 bg-white rounded-2xl shadow-sm flex items-center justify-center z-10">
+            <span className="text-2xl font-bold text-blue-600">
+              {whiteboard.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+        </div>
+
+        <div className="p-5">
+          <h3 className="font-semibold text-slate-900 truncate pr-8 group-hover:text-blue-600 transition-colors">
             {whiteboard.name}
           </h3>
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
-              className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <MoreVertical className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-            </button>
+          <div className="flex items-center gap-2 mt-2 text-xs text-slate-500 font-medium">
+            <Calendar className="w-3.5 h-3.5" />
+            <span>
+              {whiteboard.createdAt
+                ? formatDistanceToNow(new Date(whiteboard.createdAt), {
+                    addSuffix: true,
+                  })
+                : "Just now"}
+            </span>
+          </div>
+        </div>
+      </Link>
 
-            {showMenu && (
-              <>
-                <div
-                  className="fixed inset-0 z-10"
+      <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="relative">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="h-8 w-8 p-0 bg-white/90 backdrop-blur shadow-sm hover:bg-white"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowMenu(!showMenu);
+            }}
+          >
+            <MoreVertical className="w-4 h-4 text-slate-600" />
+          </Button>
+
+          {showMenu && (
+            <>
+              <div
+                className="fixed inset-0 z-10"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-20 py-1 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+                <Link
+                  href={`/whiteboard/${whiteboard.id}`}
+                  className="flex items-center gap-2 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  Open Board
+                </Link>
+                <button
                   onClick={(e) => {
-                    e.stopPropagation();
-                    setShowMenu(false);
+                    e.preventDefault();
+                    onDelete(whiteboard.id);
                   }}
-                />
-                <div className="absolute right-0 mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete();
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    Delete
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete
+                </button>
+              </div>
+            </>
+          )}
         </div>
-
-        <div className="space-y-2 text-xs sm:text-sm text-gray-600">
-          <div className="flex items-center justify-between">
-            <span>Updated {formatDate(whiteboard.updatedAt)}</span>
-            <span className="font-medium">{elementCount} elements</span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <code className="flex-1 px-2 py-1 bg-gray-100 rounded text-xs font-mono">
-              {whiteboard.roomCode}
-            </code>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleCopyCode();
-              }}
-              className="p-1.5 hover:bg-gray-100 rounded transition-colors"
-              title="Copy room code"
-            >
-              {copied ? (
-                <span className="text-green-600 text-xs">✓</span>
-              ) : (
-                <Copy className="w-3.5 h-3.5" />
-              )}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-100">
-        <button
-          onClick={() => router.push(`/whiteboard/${whiteboard.id}`)}
-          className="w-full flex items-center justify-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700"
-        >
-          <span>Open Whiteboard</span>
-          <ExternalLink className="w-4 h-4" />
-        </button>
       </div>
     </div>
   );

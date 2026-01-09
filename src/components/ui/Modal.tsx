@@ -1,14 +1,16 @@
-// src/components/ui/Modal.tsx
+"use client";
 
-import { useEffect, ReactNode } from "react";
 import { X } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
+import Button from "./Button";
+import { cn } from "@/lib/utils";
 
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  title?: string;
-  children: ReactNode;
-  maxWidth?: "sm" | "md" | "lg" | "xl";
+  title: string;
+  children: React.ReactNode;
 }
 
 export default function Modal({
@@ -16,52 +18,56 @@ export default function Modal({
   onClose,
   title,
   children,
-  maxWidth = "md",
 }: ModalProps) {
+  const overlayRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+
     if (isOpen) {
       document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
+      window.addEventListener("keydown", handleEscape);
     }
+
     return () => {
       document.body.style.overflow = "unset";
+      window.removeEventListener("keydown", handleEscape);
     };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   if (!isOpen) return null;
 
-  const maxWidthClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-  };
-
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+      {/* Backdrop with Blur */}
       <div
-        className="absolute inset-0 bg-black bg-opacity-50 transition-opacity"
-        onClick={onClose}
+        ref={overlayRef}
+        onClick={(e) => e.target === overlayRef.current && onClose()}
+        className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm transition-opacity"
+        aria-hidden="true"
       />
-      <div
-        className={`relative bg-white rounded-xl shadow-xl w-full ${maxWidthClasses[maxWidth]} max-h-[90vh] overflow-y-auto`}
-      >
-        {title && (
-          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-200">
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-              {title}
-            </h2>
-            <button
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          </div>
-        )}
-        <div className="p-4 sm:p-6">{children}</div>
+
+      {/* Modal Content */}
+      <div className="relative w-full max-w-lg transform rounded-2xl bg-white p-6 text-left shadow-2xl transition-all border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex items-center justify-between mb-5">
+          <h3 className="text-xl font-bold text-slate-900 tracking-tight">
+            {title}
+          </h3>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onClose}
+            className="h-8 w-8 p-0 rounded-full hover:bg-slate-100"
+          >
+            <X className="h-4 w-4 text-slate-500" />
+            <span className="sr-only">Close</span>
+          </Button>
+        </div>
+        <div className="mt-2">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

@@ -17,6 +17,7 @@ const colors = [
   "#FFFF00", // Yellow
   "#FF00FF", // Magenta
   "#00FFFF", // Cyan
+  "#FFFFFF", // White
 ];
 
 export default function ColorPicker({
@@ -24,23 +25,23 @@ export default function ColorPicker({
   onColorSelect,
 }: ColorPickerProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-2 sm:p-3">
-      <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-        {colors.map((color) => (
-          <button
-            key={color}
-            onClick={() => onColorSelect(color)}
-            className={cn(
-              "w-10 h-10 sm:w-12 sm:h-12 rounded-lg transition-all border-2",
-              selectedColor === color
-                ? "border-gray-900 scale-110"
-                : "border-gray-300 hover:scale-105"
-            )}
-            style={{ backgroundColor: color }}
-            title={color}
-          />
-        ))}
-      </div>
+    <div className="flex items-center gap-1 sm:gap-1.5">
+      {colors.map((color) => (
+        <button
+          key={color}
+          onClick={() => onColorSelect(color)}
+          className={cn(
+            "w-7 h-7 sm:w-8 sm:h-8 rounded-md transition-all border-2 flex-shrink-0",
+            selectedColor === color
+              ? "border-blue-600 scale-110 ring-2 ring-blue-200"
+              : "border-gray-300 hover:scale-105",
+            color === "#FFFFFF" && "border-gray-400"
+          )}
+          style={{ backgroundColor: color }}
+          title={color}
+          aria-label={`Select ${color} color`}
+        />
+      ))}
     </div>
   );
 }

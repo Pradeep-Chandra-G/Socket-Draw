@@ -286,5 +286,5 @@ export default function WhiteboardEditor() {
         maxUsers={5}
       />
     </div>
-  );
+  );    
 }

@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 interface ToolbarProps {
   selectedTool: ToolType;
   onToolSelect: (tool: ToolType) => void;
+  className?: string;
 }
 
 const tools = [
@@ -20,29 +21,43 @@ const tools = [
   { type: "eraser" as ToolType, icon: Eraser, label: "Eraser" },
 ];
 
-export default function Toolbar({ selectedTool, onToolSelect }: ToolbarProps) {
+export default function Toolbar({
+  selectedTool,
+  onToolSelect,
+  className,
+}: ToolbarProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-2 sm:p-3">
-      <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
-        {tools.map((tool) => {
-          const Icon = tool.icon;
-          return (
-            <button
-              key={tool.type}
-              onClick={() => onToolSelect(tool.type)}
-              className={cn(
-                "flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-lg transition-all",
-                selectedTool === tool.type
-                  ? "bg-blue-600 text-white shadow-md"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              )}
-              title={tool.label}
-            >
-              <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-          );
-        })}
-      </div>
+    <div
+      className={cn(
+        "bg-white border border-gray-200 shadow-xl rounded-full sm:rounded-2xl p-2",
+        "flex flex-row sm:flex-col gap-2 sm:gap-3",
+        "items-center justify-center backdrop-blur-sm bg-white/90",
+        className
+      )}
+    >
+      {tools.map((tool) => {
+        const Icon = tool.icon;
+        const isSelected = selectedTool === tool.type;
+        return (
+          <button
+            key={tool.type}
+            onClick={() => onToolSelect(tool.type)}
+            className={cn(
+              "flex items-center justify-center transition-all duration-200",
+              "w-10 h-10 sm:w-11 sm:h-11 rounded-full sm:rounded-xl",
+              "hover:scale-105 active:scale-95 touch-manipulation",
+              isSelected
+                ? "bg-blue-600 text-white shadow-md ring-2 ring-blue-200"
+                : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+            )}
+            title={tool.label}
+            aria-label={tool.label}
+            type="button"
+          >
+            <Icon className="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
+        );
+      })}
     </div>
   );
 }
