@@ -55,7 +55,22 @@ export async function GET(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
-    return NextResponse.json({ whiteboard });
+    // Parse elements if they're stored as JSON string
+    let elements = whiteboard.elements;
+    if (typeof elements === "string") {
+      try {
+        elements = JSON.parse(elements);
+      } catch (e) {
+        elements = [];
+      }
+    }
+
+    return NextResponse.json({
+      whiteboard: {
+        ...whiteboard,
+        elements: Array.isArray(elements) ? elements : [],
+      },
+    });
   } catch (error) {
     console.error("Error fetching whiteboard:", error);
     return NextResponse.json(
@@ -106,7 +121,7 @@ export async function PUT(
       where: { id: params.id },
       data: {
         ...(name && { name }),
-        ...(elements && { elements }),
+        ...(elements !== undefined && { elements: elements }),
         ...(thumbnail !== undefined && { thumbnail }),
       },
       include: {

@@ -16,7 +16,7 @@ const MAX_USERS_PER_ROOM =
   parseInt(process.env.NEXT_PUBLIC_MAX_ROOM_USERS) || 5;
 
 const rooms = new Map();
-const CURSOR_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#000000"];
+const CURSOR_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
@@ -32,7 +32,7 @@ io.on("connection", (socket) => {
       return;
     }
 
-    // Assign color based on user count
+    // Assign color based on current user count
     const userColor = CURSOR_COLORS[room.users.size % CURSOR_COLORS.length];
 
     room.users.set(socket.id, { userId, userName, color: userColor });
@@ -44,8 +44,10 @@ io.on("connection", (socket) => {
     socket.data.userName = userName;
     socket.data.color = userColor;
 
+    // Send existing elements to the newly joined user
     socket.emit("elements:sync", room.elements);
 
+    // Notify all users in the room
     io.to(roomCode).emit("user:joined", {
       userId,
       userName,
@@ -53,7 +55,7 @@ io.on("connection", (socket) => {
     });
 
     console.log(
-      `User ${userName} joined room ${roomCode}. Total users: ${room.users.size}`
+      `User ${userName} (${userColor}) joined room ${roomCode}. Total users: ${room.users.size}`
     );
   });
 
@@ -109,12 +111,15 @@ io.on("connection", (socket) => {
   });
 
   socket.on("cursor:move", ({ roomCode, userId, userName, x, y, color }) => {
+    // Use the stored color from socket.data if not provided
+    const cursorColor = color || socket.data.color;
+
     socket.to(roomCode).emit("cursor:move", {
       userId,
       userName,
       x,
       y,
-      color: color || socket.data.color,
+      color: cursorColor,
     });
   });
 

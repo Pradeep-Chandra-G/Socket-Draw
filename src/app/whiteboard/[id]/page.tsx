@@ -26,7 +26,7 @@ interface RemoteCursor {
   color: string;
 }
 
-const CURSOR_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#000000"];
+const CURSOR_COLORS = ["#EF4444", "#3B82F6", "#10B981", "#F59E0B", "#8B5CF6"];
 
 export default function WhiteboardEditor() {
   const params = useParams();
@@ -44,6 +44,7 @@ export default function WhiteboardEditor() {
     new Map()
   );
   const lastSaveRef = useRef<string>("");
+  const userColorRef = useRef<string>(""); // Store user's assigned color
 
   const {
     elements,
@@ -80,8 +81,11 @@ export default function WhiteboardEditor() {
   useEffect(() => {
     if (!socket || !isConnected || !whiteboard || !session) return;
 
-    const userIndex = Math.floor(Math.random() * CURSOR_COLORS.length);
-    const userColor = CURSOR_COLORS[userIndex];
+    // Assign a consistent color for this user session
+    if (!userColorRef.current) {
+      const userIndex = Math.floor(Math.random() * CURSOR_COLORS.length);
+      userColorRef.current = CURSOR_COLORS[userIndex];
+    }
 
     socket.emit("room:join", {
       roomCode: whiteboard.roomCode,
@@ -90,6 +94,7 @@ export default function WhiteboardEditor() {
     });
 
     socket.on("elements:sync", (syncedElements: WhiteboardElement[]) => {
+      console.log("Received synced elements:", syncedElements.length);
       setElements(syncedElements);
     });
 
@@ -172,7 +177,14 @@ export default function WhiteboardEditor() {
 
       if (response.ok) {
         setWhiteboard(data.whiteboard);
-        setElements(data.whiteboard.elements || []);
+        // Properly parse elements if they're stored as JSON string
+        const savedElements = Array.isArray(data.whiteboard.elements)
+          ? data.whiteboard.elements
+          : typeof data.whiteboard.elements === "string"
+          ? JSON.parse(data.whiteboard.elements)
+          : [];
+        setElements(savedElements);
+        console.log("Loaded elements:", savedElements.length);
       } else {
         router.push("/dashboard");
       }
@@ -239,15 +251,14 @@ export default function WhiteboardEditor() {
   };
 
   const handleCursorMove = (x: number, y: number) => {
-    if (socket && whiteboard && session) {
-      const userIndex = Math.floor(Math.random() * CURSOR_COLORS.length);
+    if (socket && whiteboard && session && userCount > 1) {
       socket.emit("cursor:move", {
         roomCode: whiteboard.roomCode,
         userId: session.user.id,
         userName: session.user.name || session.user.email,
         x,
         y,
-        color: CURSOR_COLORS[userIndex],
+        color: userColorRef.current,
       });
     }
   };
@@ -385,39 +396,40 @@ export default function WhiteboardEditor() {
           onCursorMove={handleCursorMove}
         />
 
-        {/* Remote Cursors */}
-        {Array.from(remoteCursors.values()).map((cursor) => (
-          <div
-            key={cursor.userId}
-            className="absolute pointer-events-none z-50"
-            style={{
-              left: cursor.x,
-              top: cursor.y,
-              transform: "translate(-2px, -2px)",
-            }}
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M5.5 3.5L19.5 12L12 13.5L9.5 20.5L5.5 3.5Z"
-                fill={cursor.color}
-                stroke="white"
-                strokeWidth="1.5"
-              />
-            </svg>
+        {/* Remote Cursors - Only show when multiple users */}
+        {userCount > 1 &&
+          Array.from(remoteCursors.values()).map((cursor) => (
             <div
-              className="mt-1 px-2 py-1 rounded text-xs font-semibold text-white whitespace-nowrap shadow-lg"
-              style={{ backgroundColor: cursor.color }}
+              key={cursor.userId}
+              className="absolute pointer-events-none z-50"
+              style={{
+                left: cursor.x,
+                top: cursor.y,
+                transform: "translate(-2px, -2px)",
+              }}
             >
-              {cursor.userName}
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M5.5 3.5L19.5 12L12 13.5L9.5 20.5L5.5 3.5Z"
+                  fill={cursor.color}
+                  stroke="white"
+                  strokeWidth="1.5"
+                />
+              </svg>
+              <div
+                className="mt-1 px-2 py-1 rounded text-xs font-semibold text-white whitespace-nowrap shadow-lg"
+                style={{ backgroundColor: cursor.color }}
+              >
+                {cursor.userName}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
       </div>
 
       {/* Modals */}
