@@ -1,0 +1,61 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(cuid())
+  email         String       @unique
+  name          String?
+  password      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  whiteboards   Whiteboard[]
+  permissions   WhiteboardPermission[]
+  
+  @@index([email])
+}
+
+model Whiteboard {
+  id          String   @id @default(cuid())
+  name        String
+  roomCode    String   @unique
+  elements    Json     @default("[]")
+  thumbnail   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  ownerId     String
+  
+  owner       User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  permissions WhiteboardPermission[]
+  
+  @@index([roomCode])
+  @@index([ownerId])
+}
+
+model WhiteboardPermission {
+  id            String      @id @default(cuid())
+  whiteboardId  String
+  userId        String
+  permission    Permission  @default(VIEW)
+  createdAt     DateTime    @default(now())
+  
+  whiteboard    Whiteboard  @relation(fields: [whiteboardId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([whiteboardId, userId])
+  @@index([whiteboardId])
+  @@index([userId])
+}
+
+enum Permission {
+  VIEW
+  EDIT
+}
